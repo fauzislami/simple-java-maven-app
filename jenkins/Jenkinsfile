@@ -23,7 +23,9 @@ pipeline {
             }
             post {
                 always {
-                    junit 'target/surefire-reports/*.xml'
+                    catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                        junit 'target/surefire-reports/*.xml'
+                    }
                 }
             }
         }
