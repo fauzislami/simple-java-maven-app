@@ -1,43 +1,40 @@
 pipeline {
-    agent any // {
-       // docker {
-       //     image 'maven:3-alpine'
-       //     args '-v /root/.m2:/root/.m2'
-       // }
-    //}
+    agent any
     
     tools {
         maven 'maven'
         jdk 'jdk8'
     }
-    
-     environment {
+ 
+    environment {
         NEXUS_VERSION = "nexus3"
         NEXUS_PROTOCOL = "http"
         NEXUS_URL = "192.168.100.14:80"
         NEXUS_REPOSITORY = "maven-nexus-repo"
         NEXUS_CREDENTIAL_ID = "nexus-user-credentials"
     }
-    
+
     stages {
-        stage('Build') {
+        stage('Building code') {
             steps {
+                sh 'mvn clean install'
                 sh 'mvn -B -DskipTests clean package'
             }
         }
-        stage('Test') {
+
+        stage('Unit testing') {
             steps {
                 sh 'mvn test'
             }
             post {
                 always {
-                    catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                        junit 'target/surefire-reports/*.xml'
-                    }
+                     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                         junit 'target/surefire-reports/*.xml'
+                     }
                 }
             }
         }
-        
+
         stage('Push artifact to Nexus') {
             steps {
                 script {
@@ -73,13 +70,17 @@ pipeline {
                     }
                 }
             }
-
         }
-        
-        stage('Deliver') {
+ 
+        stage('Build and Push Image') {
             steps {
-                sh './jenkins/scripts/deliver.sh'
+                script {
+                    docker.withRegistry('http://192.168.100.14:5000', 'nexus-user-credentials') {
+                        def customImage = docker.build("192.168.100.14:5000/dev/hello-world:${env.BUILD_ID}")
+                            customImage.push()
+                     }
+                }
             }
-        }
+       }        
     }
 }
