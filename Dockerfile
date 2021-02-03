@@ -1,4 +1,4 @@
-FROM 192.168.100.14:5000/baseimages/openjdk
+FROM 192.168.1.116:5000/baseimages/openjdk
 ADD ./target/my-app-1.0-SNAPSHOT.jar /my-app-1.0-SNAPSHOT.jar
 ADD ./run.sh /run.sh
 RUN chmod a+x /run.sh
